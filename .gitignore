@@ -1,0 +1,45 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# MLflow tracking data
+mlruns/
+mlflow.db
+mlflow.db-journal
+
+# Environment & secrets
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Large model weights (use Git LFS or DVC if tracking)
+*.pt
+*.pth
+*.onnx
+*.weights
+*.bin
+!data/sample.dvc
