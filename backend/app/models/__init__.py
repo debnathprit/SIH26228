@@ -2,6 +2,8 @@
 
 from .schemas import (
     APIResponseEnvelope,
+    AssurancePillar,
+    AssuranceSummaryData,
     HealthData,
     SystemComponents,
     SystemOverviewData,
@@ -9,7 +11,10 @@ from .schemas import (
 
 __all__ = [
     "APIResponseEnvelope",
+    "AssurancePillar",
+    "AssuranceSummaryData",
     "HealthData",
     "SystemComponents",
     "SystemOverviewData",
 ]
+
