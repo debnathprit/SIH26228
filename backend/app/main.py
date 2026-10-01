@@ -1,5 +1,6 @@
 """FastAPI Application Entry Point for Trusted Computer Vision Assurance."""
 
+import os
 from pathlib import Path
 import sys
 
@@ -23,13 +24,25 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS configuration for frontend development
-ALLOWED_ORIGINS = [
+# CORS configuration for frontend and cross-network client access
+DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:5174",
     "http://localhost:5173",
     "http://127.0.0.1:5174",
     "http://127.0.0.1:5173",
 ]
+
+env_origins = os.getenv("ALLOWED_ORIGINS", "")
+if env_origins.strip() == "*":
+    ALLOWED_ORIGINS = ["*"]
+elif env_origins.strip():
+    ALLOWED_ORIGINS = list(DEFAULT_ALLOWED_ORIGINS)
+    for origin in env_origins.split(","):
+        stripped = origin.strip()
+        if stripped and stripped not in ALLOWED_ORIGINS:
+            ALLOWED_ORIGINS.append(stripped)
+else:
+    ALLOWED_ORIGINS = list(DEFAULT_ALLOWED_ORIGINS)
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,4 +69,8 @@ def root_redirect():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
+
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("backend.app.main:app", host=host, port=port, reload=True)
+

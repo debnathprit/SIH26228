@@ -8,5 +8,11 @@ ultralytics>=8.0.0
 # Dataset Version Control
 dvc>=3.0.0
 
+# Web API & Server
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+pydantic>=2.0.0
+python-multipart>=0.0.9
+
 # Experiment & Model Tracking
 mlflow>=2.10.0
