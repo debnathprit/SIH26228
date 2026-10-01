@@ -1,0 +1,43 @@
+# Version control and documentation
+.git/
+.gitignore
+.gitattributes
+docs/
+*.md
+
+# Frontend code (backend container only)
+frontend/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+dist/
+*.egg-info/
+
+# Tests & test caches
+tests/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# MLflow tracking local database (prevent baking host's dev db into image)
+mlruns/
+mlflow.db
+mlflow.db-journal
+
+# DVC cache and temporary files
+.dvc/cache/
+.dvc/tmp/
+
+# IDE and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
