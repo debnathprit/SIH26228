@@ -45,3 +45,30 @@ class SystemOverviewData(BaseModel):
     project: str = "Trusted Computer Vision Assurance"
     api_version: str = "v1"
     components: SystemComponents = Field(default_factory=SystemComponents)
+
+
+class AssurancePillar(BaseModel):
+    """Evaluation assessment for an individual lifecycle capability pillar."""
+
+    id: str
+    title: str
+    status: str  # VERIFIED | REVIEW | TAMPERED | UNAVAILABLE
+    severity: str  # low | medium | high | critical
+    confidence: float = Field(ge=0.0, le=1.0)
+    asset: str
+    explanation: str
+    evidenceAvailable: bool = False
+
+
+class AssuranceSummaryData(BaseModel):
+    """Aggregated executive assurance summary replacing frontend mock cards."""
+
+    assessmentTimestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    globalDisposition: str  # VERIFIED | REVIEW | TAMPERED | UNAVAILABLE
+    globalReason: str
+    evidenceCount: int = Field(ge=0)
+    unresolvedFlags: int = Field(ge=0)
+    pillars: list[AssurancePillar] = Field(default_factory=list)
+
