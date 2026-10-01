@@ -16,6 +16,7 @@ import { EvidenceViewerPage } from './pages/EvidenceViewer/EvidenceViewerPage';
 import { AuditTrailPage } from './pages/AuditTrail/AuditTrailPage';
 import { AssuranceReportPage } from './pages/AssuranceReport/AssuranceReportPage';
 
+import { systemService } from './services/systemService';
 import { datasetService } from './services/datasetService';
 import { modelService } from './services/modelService';
 import { inferenceService } from './services/inferenceService';
@@ -30,6 +31,11 @@ import { mockAssuranceReport } from './mock/mockReport';
 export function App() {
   const [currentTab, setCurrentTab] = useState('overview');
   const [highlightedEvidenceId, setHighlightedEvidenceId] = useState(null);
+
+  // Live Backend System States (Phase 3B Step 1)
+  const [backendHealth, setBackendHealth] = useState(null);
+  const [systemOverview, setSystemOverview] = useState(null);
+  const [isBackendConnected, setIsBackendConnected] = useState(false);
 
   // Pillar Data States
   const [overviewData, setOverviewData] = useState(mockSystemOverview);
@@ -46,9 +52,31 @@ export function App() {
   useEffect(() => {
     // Attempt to load from service layer (gracefully uses mock data if backend offline)
     async function loadData() {
+      // Step 1: Health & System Overview live integration
       try {
-        const [ovRes, dsRes, mdRes, infRes, shRes, evRes, audRes, repRes] = await Promise.all([
-          datasetService.getOverview(),
+        const [healthRes, sysRes] = await Promise.all([
+          systemService.getHealth(),
+          systemService.getOverview()
+        ]);
+
+        if (healthRes.data && healthRes.data.status === 'ok') {
+          setBackendHealth(healthRes.data);
+          setIsBackendConnected(true);
+        } else {
+          setIsBackendConnected(false);
+        }
+
+        if (sysRes.data && sysRes.data.components) {
+          setSystemOverview(sysRes.data);
+        }
+      } catch (err) {
+        console.warn('Backend system endpoints check failed:', err);
+        setIsBackendConnected(false);
+      }
+
+      // Load pillar datasets (falling back to mock data if backend endpoints are not yet implemented)
+      try {
+        const [dsRes, mdRes, infRes, shRes, evRes, audRes, repRes] = await Promise.all([
           datasetService.getLatestAssurance(),
           modelService.getLatestAssurance(),
           inferenceService.getLatestVerification(),
@@ -58,7 +86,6 @@ export function App() {
           reportService.getLatestReport()
         ]);
 
-        if (ovRes.data) setOverviewData(ovRes.data);
         if (dsRes.data) setDatasetData(dsRes.data);
         if (mdRes.data) setModelData(mdRes.data);
         if (infRes.data) setInferenceData(infRes.data);
@@ -67,7 +94,8 @@ export function App() {
         if (audRes.data) setAuditList(audRes.data);
         if (repRes.data) setReportData(repRes.data);
 
-        setIsMockActive(ovRes.isMock);
+        // Keep mock banner active for pipeline pillars until Person A implements evaluation endpoints
+        setIsMockActive(true);
       } catch (err) {
         console.warn('Backend unavailable, running in local air-gapped demo mode:', err);
         setIsMockActive(true);
@@ -99,7 +127,15 @@ export function App() {
   const renderActivePage = () => {
     switch (currentTab) {
       case 'overview':
-        return <OverviewPage data={overviewData} onNavigate={setCurrentTab} />;
+        return (
+          <OverviewPage
+            data={overviewData}
+            onNavigate={setCurrentTab}
+            backendHealth={backendHealth}
+            systemOverview={systemOverview}
+            isBackendConnected={isBackendConnected}
+          />
+        );
       case 'dataset':
         return <DatasetAssurancePage data={datasetData} onNavigateToEvidence={handleNavigateToEvidence} />;
       case 'model':
@@ -115,7 +151,15 @@ export function App() {
       case 'report':
         return <AssuranceReportPage report={reportData} />;
       default:
-        return <OverviewPage data={overviewData} onNavigate={setCurrentTab} />;
+        return (
+          <OverviewPage
+            data={overviewData}
+            onNavigate={setCurrentTab}
+            backendHealth={backendHealth}
+            systemOverview={systemOverview}
+            isBackendConnected={isBackendConnected}
+          />
+        );
     }
   };
 
@@ -129,6 +173,8 @@ export function App() {
       currentTitle={getPageTitle()}
       globalDisposition={overviewData.globalDisposition}
       isMock={isMockActive}
+      backendHealth={backendHealth}
+      isBackendConnected={isBackendConnected}
     >
       {renderActivePage()}
     </AppLayout>

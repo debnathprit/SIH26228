@@ -30,16 +30,31 @@ export async function request(endpoint, options = {}, mockFallback = null) {
     });
 
     if (!res.ok) {
+      // Backend is reachable but returned an HTTP status (e.g. 404 for un-implemented endpoint)
+      isBackendReachable = true;
+      if (mockFallback !== null) {
+        return {
+          data: mockFallback,
+          isMock: true,
+          error: `Endpoint ${endpoint} returned HTTP ${res.status} (${res.statusText}). Using local mock data.`
+        };
+      }
       throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
     }
 
     const json = await res.json();
     isBackendReachable = true;
-    return { data: json, isMock: false, error: null };
+
+    // Unpack standardized APIResponseEnvelope if present
+    const payload = (json && typeof json === 'object' && json.status === 'success' && 'data' in json)
+      ? json.data
+      : json;
+
+    return { data: payload, rawEnvelope: json, isMock: false, error: null };
   } catch (err) {
+    // Genuine network / connectivity failure (server offline or connection refused)
     isBackendReachable = false;
     lastCheckTime = Date.now();
-    // Graceful offline fallback
     if (mockFallback !== null) {
       return {
         data: mockFallback,
@@ -50,3 +65,20 @@ export async function request(endpoint, options = {}, mockFallback = null) {
     return { data: null, isMock: false, error: err.message };
   }
 }
+
+/**
+ * Direct Step 1 health check helper.
+ * Queries GET /api/v1/health.
+ */
+export async function checkHealth() {
+  return request('/health', { method: 'GET' }, null);
+}
+
+/**
+ * Direct Step 1 system overview helper.
+ * Queries GET /api/v1/system/overview.
+ */
+export async function getSystemOverview() {
+  return request('/system/overview', { method: 'GET' }, null);
+}
+

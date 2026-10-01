@@ -24,8 +24,14 @@ import {
   IconAlertTriangle
 } from '../../components/common/Icons';
 
-export function OverviewPage({ data, onNavigate }) {
-  const { globalDisposition, globalReason, evidenceCount, unresolvedFlags, pillars = [] } = data;
+export function OverviewPage({
+  data = {},
+  onNavigate,
+  backendHealth = null,
+  systemOverview = null,
+  isBackendConnected = false
+}) {
+  const { globalDisposition = 'REVIEW', globalReason = '', evidenceCount = 0, unresolvedFlags = 0, pillars = [] } = data;
 
   const getPillarIcon = (id) => {
     switch (id) {
@@ -86,6 +92,66 @@ export function OverviewPage({ data, onNavigate }) {
           <span style={{ color: 'var(--text-primary)' }}>Audit Trail</span>
           <span style={{ color: 'var(--accent-cyan)' }}>➔</span>
           <span style={{ color: 'var(--status-verified-text)' }}>Assurance Report</span>
+        </div>
+      </SectionCard>
+
+      {/* Live Backend Subsystem Inventory (Phase 3B Step 1 Integration) */}
+      <SectionCard
+        title={`Backend Subsystems: ${systemOverview?.project || 'Trusted Computer Vision Assurance'}`}
+        subtitle={`FastAPI Service at http://localhost:8000/api/v1 — API Version: ${systemOverview?.api_version || 'v1'}`}
+        icon={<IconCpu size={20} color="var(--accent-cyan)" />}
+        badge={
+          isBackendConnected ? (
+            <StatusBadge status="VERIFIED" label={`API v${backendHealth?.version || '1.0.0'} ONLINE`} />
+          ) : (
+            <StatusBadge status="REVIEW" label="OFFLINE (DEMO MODE)" />
+          )
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Verified operational components deployed in the backend execution environment:
+          </p>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '10px'
+          }}>
+            {systemOverview?.components ? (
+              Object.entries(systemOverview.components).map(([key, isActive]) => {
+                const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                return (
+                  <div
+                    key={key}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '8px 12px',
+                      background: 'var(--bg-canvas)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '6px',
+                      fontSize: '12px'
+                    }}
+                  >
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+                    <span style={{
+                      color: isActive ? 'var(--status-verified-text)' : 'var(--text-muted)',
+                      fontWeight: 600,
+                      fontSize: '11px'
+                    }}>
+                      {isActive ? '● ACTIVE' : '○ INACTIVE'}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 0' }}>
+                Backend service unreachable. Using local simulation fallback.
+              </div>
+            )}
+          </div>
         </div>
       </SectionCard>
 

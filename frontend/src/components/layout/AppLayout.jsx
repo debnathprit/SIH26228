@@ -7,13 +7,27 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { IconAlertTriangle } from '../common/Icons';
 
-export function AppLayout({ currentTab, onSelectTab, currentTitle, globalDisposition, isMock = true, children }) {
+export function AppLayout({
+  currentTab,
+  onSelectTab,
+  currentTitle,
+  globalDisposition,
+  isMock = true,
+  backendHealth = null,
+  isBackendConnected = false,
+  children
+}) {
   return (
     <div className="app-container">
       <Sidebar currentTab={currentTab} onSelectTab={onSelectTab} />
 
       <div className="app-main-wrapper">
-        <Header currentTitle={currentTitle} globalDisposition={globalDisposition} />
+        <Header
+          currentTitle={currentTitle}
+          globalDisposition={globalDisposition}
+          backendHealth={backendHealth}
+          isBackendConnected={isBackendConnected}
+        />
 
         <main className="app-content">
           {/* Explicit Mock Data / Demo Banner */}
