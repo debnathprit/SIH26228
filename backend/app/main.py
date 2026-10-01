@@ -11,6 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from backend.app.api.routes_assurance import router as assurance_router
 from backend.app.api.routes_system import router as system_router
 
 app = FastAPI(
@@ -52,8 +53,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register versioned API router
+# Register versioned API routers
 app.include_router(system_router, prefix="/api/v1")
+app.include_router(assurance_router, prefix="/api/v1")
 
 
 @app.get("/", tags=["Root"])
