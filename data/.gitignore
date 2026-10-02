@@ -1,1 +1,5 @@
-/sample
+# Exclude bulk dataset files while tracking the verified reference sample images
+/sample/*
+!/sample/sample_01.png
+!/sample/sample_02.png
+!/sample/sample_03.png

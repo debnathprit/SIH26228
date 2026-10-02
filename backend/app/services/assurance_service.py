@@ -356,13 +356,18 @@ class AssuranceService:
 
     def evaluate_distribution_shift(
         self,
+        query_target: Path | str | None = None,
+        reference_dir: Path | str | None = None,
         shift_evidence: dict[str, Any] | None = None,
+        ledger: HashChainLedger | None = None,
     ) -> tuple[AssurancePillar, int]:
         """Evaluate Distribution Shift & Out-of-Distribution Anomaly.
 
-        Honors requirement: do not invent fake successful results. If source
-        is not yet deployed, represent the state explicitly.
+        Honors requirement: do not invent fake successful results. If no operational
+        query input is supplied, represent the unavailable state explicitly without
+        creating ledger entries.
         """
+        # 1. Direct pre-computed evidence dict (preserved)
         if shift_evidence:
             status = shift_evidence.get("status", "REVIEW")
             severity = shift_evidence.get("severity", "medium")
@@ -387,7 +392,65 @@ class AssuranceService:
                 evidence_count,
             )
 
-        # Honest representation of undeployed subsystem
+        # 2. Active query evaluation via DistributionShiftEvaluator
+        if query_target is not None and str(query_target).strip() != "":
+            try:
+                from ml.distribution_shift.detector import DistributionShiftEvaluator
+
+                evaluator = DistributionShiftEvaluator(
+                    reference_dir=reference_dir or self.dataset_dir
+                )
+                active_ledger = ledger or self._get_or_create_ledger()
+                report = evaluator.evaluate(
+                    query_target=query_target,
+                    ledger=active_ledger,
+                )
+
+                if report.status == "UNAVAILABLE":
+                    return (
+                        AssurancePillar(
+                            id="shift",
+                            title="Distribution Shift & Anomaly",
+                            status="UNAVAILABLE",
+                            severity="low",
+                            confidence=0.0,
+                            asset=f"Query: {Path(query_target).name}",
+                            explanation=report.explanation,
+                            evidenceAvailable=False,
+                        ),
+                        0,
+                    )
+
+                asset_name = f"Shift Analysis: {Path(query_target).name}"
+                return (
+                    AssurancePillar(
+                        id="shift",
+                        title="Distribution Shift & Anomaly",
+                        status=report.status,
+                        severity=report.overall_severity,
+                        confidence=report.overall_confidence,
+                        asset=asset_name,
+                        explanation=report.explanation,
+                        evidenceAvailable=report.evidence_available,
+                    ),
+                    1 if report.evidence_available else 0,
+                )
+            except Exception as err:
+                return (
+                    AssurancePillar(
+                        id="shift",
+                        title="Distribution Shift & Anomaly",
+                        status="REVIEW",
+                        severity="high",
+                        confidence=0.5,
+                        asset=f"Query: {Path(query_target).name}",
+                        explanation=f"Distribution shift evaluation error: {err}",
+                        evidenceAvailable=False,
+                    ),
+                    0,
+                )
+
+        # 3. Honest representation of unqueried / passive state
         return (
             AssurancePillar(
                 id="shift",
@@ -469,6 +532,7 @@ class AssuranceService:
         shift_evidence_count: int | None = None,
         ledger_pillar: AssurancePillar | None = None,
         ledger_evidence_count: int | None = None,
+        shift_query_target: Path | str | None = None,
     ) -> AssuranceSummaryData:
         """Aggregate evaluation results across all pillars into the executive assurance summary."""
         # 1. Evaluate or use provided pillars
@@ -488,7 +552,7 @@ class AssuranceService:
             inf_ev = inference_evidence_count or (1 if inference_pillar.evidenceAvailable else 0)
 
         if shift_pillar is None:
-            shift_pillar, sh_ev = self.evaluate_distribution_shift()
+            shift_pillar, sh_ev = self.evaluate_distribution_shift(query_target=shift_query_target)
         else:
             sh_ev = shift_evidence_count or (1 if shift_pillar.evidenceAvailable else 0)
 

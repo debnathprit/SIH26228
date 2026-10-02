@@ -30,8 +30,18 @@ COPY ml /app/ml
 COPY blockchain /app/blockchain
 COPY data /app/data
 
+# Ensure model weights directory and pinned YOLOv8n model are available and verified
+ARG YOLOV8N_PINNED_URL="https://github.com/ultralytics/assets/releases/download/v8.3.0/yolov8n.pt"
+ARG YOLOV8N_EXPECTED_HASH="f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36"
+RUN mkdir -p /app/ml/inference/weights && \
+    if [ ! -f /app/ml/inference/weights/yolov8n.pt ]; then \
+        echo "Fetching pinned YOLOv8n model weights..." && \
+        curl -sL "${YOLOV8N_PINNED_URL}" -o /app/ml/inference/weights/yolov8n.pt; \
+    fi && \
+    echo "${YOLOV8N_EXPECTED_HASH}  /app/ml/inference/weights/yolov8n.pt" | sha256sum -c -
+
 # Ensure runtime directories exist with appropriate permissions
-RUN mkdir -p /app/ml/inference/weights /app/data && \
+RUN mkdir -p /app/data && \
     useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 
