@@ -7,7 +7,9 @@
  * transparently falls back to local mock data without breaking the UI.
  */
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://sih26228.onrender.com/api/v1";
 
 let isBackendReachable = true;
 let lastCheckTime = 0;

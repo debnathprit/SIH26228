@@ -5,6 +5,7 @@
 import React from 'react';
 import { StatusBadge } from '../common/StatusBadge';
 import { IconLock } from '../common/Icons';
+import { API_BASE_URL } from '../../services/api';
 
 export function Header({ currentTitle, globalDisposition = 'REVIEW', backendHealth = null, isBackendConnected = false }) {
   return (
@@ -21,7 +22,7 @@ export function Header({ currentTitle, globalDisposition = 'REVIEW', backendHeal
             borderColor: isBackendConnected ? 'var(--status-verified-border)' : 'var(--border-subtle)',
             background: isBackendConnected ? 'var(--status-verified-bg)' : 'transparent'
           }}
-          title={isBackendConnected ? `Backend API v${backendHealth?.version || '1.0.0'} online at localhost:8000` : 'Backend unreachable at localhost:8000. Operating in offline demo fallback.'}
+          title={isBackendConnected ? `Backend API v${backendHealth?.version || '1.0.0'} online (${API_BASE_URL})` : `Backend unreachable (${API_BASE_URL}). Operating in offline demo fallback.`}
         >
           <span
             className="air-gap-dot"
