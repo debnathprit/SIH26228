@@ -23,6 +23,7 @@ import {
   IconGitCommit,
   IconAlertTriangle
 } from '../../components/common/Icons';
+import { API_BASE_URL } from '../../services/api';
 
 export function OverviewPage({
   data = {},
@@ -133,7 +134,7 @@ export function OverviewPage({
       {/* Live Backend Subsystem Inventory (Phase 3B Step 1 Integration) */}
       <SectionCard
         title={`Backend Subsystems: ${systemOverview?.project || 'Trusted Computer Vision Assurance'}`}
-        subtitle={`FastAPI Service at http://localhost:8000/api/v1 — API Version: ${systemOverview?.api_version || 'v1'}`}
+        subtitle={`FastAPI Service at ${API_BASE_URL} — API Version: ${systemOverview?.api_version || 'v1'}`}
         icon={<IconCpu size={20} color="var(--accent-cyan)" />}
         badge={
           isBackendConnected ? (
