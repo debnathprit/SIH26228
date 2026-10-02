@@ -1,0 +1,20 @@
+{
+  "name": "sih26228-cv-assurance-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Analyst-facing frontend for Computer Vision Integrity Assurance (SIH 2026 PS 26228)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.2.0"
+  }
+}
