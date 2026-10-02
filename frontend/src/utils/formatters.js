@@ -19,7 +19,7 @@ export function truncateHash(hash, lead = 8, trail = 8) {
  */
 export function formatConfidence(conf) {
   if (conf === null || conf === undefined || isNaN(conf)) return 'N/A';
-  return `${(conf * 100).toFixed(1)}%`;
+  return `${Math.round(conf * 100)}%`;
 }
 
 /**

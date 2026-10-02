@@ -17,13 +17,7 @@ import { AuditTrailPage } from './pages/AuditTrail/AuditTrailPage';
 import { AssuranceReportPage } from './pages/AssuranceReport/AssuranceReportPage';
 
 import { systemService } from './services/systemService';
-import { datasetService } from './services/datasetService';
-import { modelService } from './services/modelService';
-import { inferenceService } from './services/inferenceService';
-import { shiftService } from './services/shiftService';
-import { evidenceService } from './services/evidenceService';
-import { auditService } from './services/auditService';
-import { reportService } from './services/reportService';
+import { assuranceService } from './services/assuranceService';
 
 import { mockSystemOverview, mockDatasetAssurance, mockModelAssurance, mockInferenceVerification, mockDistributionShift, mockEvidenceList, mockAuditTrail } from './mock/mockData';
 import { mockAssuranceReport } from './mock/mockReport';
@@ -37,7 +31,10 @@ export function App() {
   const [systemOverview, setSystemOverview] = useState(null);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
 
-  // Pillar Data States
+  const [assuranceLoading, setAssuranceLoading] = useState(true);
+  const [assuranceError, setAssuranceError] = useState(null);
+
+  // Pillar Data States (initialized to mock data for demo/fallback mode)
   const [overviewData, setOverviewData] = useState(mockSystemOverview);
   const [datasetData, setDatasetData] = useState(mockDatasetAssurance);
   const [modelData, setModelData] = useState(mockModelAssurance);
@@ -50,13 +47,15 @@ export function App() {
   const [isMockActive, setIsMockActive] = useState(true);
 
   useEffect(() => {
-    // Attempt to load from service layer (gracefully uses mock data if backend offline)
+    // Attempt to load authoritative live backend data
     async function loadData() {
-      // Step 1: Health & System Overview live integration
+      // Live Verified Endpoints: Health, System Overview & Assurance Summary
+      setAssuranceLoading(true);
       try {
-        const [healthRes, sysRes] = await Promise.all([
+        const [healthRes, sysRes, sumRes] = await Promise.all([
           systemService.getHealth(),
-          systemService.getOverview()
+          systemService.getOverview(),
+          assuranceService.getAssuranceSummary()
         ]);
 
         if (healthRes.data && healthRes.data.status === 'ok') {
@@ -69,36 +68,17 @@ export function App() {
         if (sysRes.data && sysRes.data.components) {
           setSystemOverview(sysRes.data);
         }
+
+        if (sumRes.data) {
+          setOverviewData(sumRes.data);
+          setAssuranceError(null);
+        }
       } catch (err) {
         console.warn('Backend system endpoints check failed:', err);
         setIsBackendConnected(false);
-      }
-
-      // Load pillar datasets (falling back to mock data if backend endpoints are not yet implemented)
-      try {
-        const [dsRes, mdRes, infRes, shRes, evRes, audRes, repRes] = await Promise.all([
-          datasetService.getLatestAssurance(),
-          modelService.getLatestAssurance(),
-          inferenceService.getLatestVerification(),
-          shiftService.getLatestShift(),
-          evidenceService.getEvidenceList(),
-          auditService.getAuditTrail(),
-          reportService.getLatestReport()
-        ]);
-
-        if (dsRes.data) setDatasetData(dsRes.data);
-        if (mdRes.data) setModelData(mdRes.data);
-        if (infRes.data) setInferenceData(infRes.data);
-        if (shRes.data) setShiftData(shRes.data);
-        if (evRes.data) setEvidenceList(evRes.data);
-        if (audRes.data) setAuditList(audRes.data);
-        if (repRes.data) setReportData(repRes.data);
-
-        // Keep mock banner active for pipeline pillars until Person A implements evaluation endpoints
-        setIsMockActive(true);
-      } catch (err) {
-        console.warn('Backend unavailable, running in local air-gapped demo mode:', err);
-        setIsMockActive(true);
+        setAssuranceError(err.message || 'Failed to load assurance summary');
+      } finally {
+        setAssuranceLoading(false);
       }
     }
 
@@ -134,6 +114,8 @@ export function App() {
             backendHealth={backendHealth}
             systemOverview={systemOverview}
             isBackendConnected={isBackendConnected}
+            assuranceLoading={assuranceLoading}
+            assuranceError={assuranceError}
           />
         );
       case 'dataset':
@@ -158,6 +140,8 @@ export function App() {
             backendHealth={backendHealth}
             systemOverview={systemOverview}
             isBackendConnected={isBackendConnected}
+            assuranceLoading={assuranceLoading}
+            assuranceError={assuranceError}
           />
         );
     }

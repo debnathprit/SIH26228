@@ -29,9 +29,16 @@ export function OverviewPage({
   onNavigate,
   backendHealth = null,
   systemOverview = null,
-  isBackendConnected = false
+  isBackendConnected = false,
+  assuranceLoading = false,
+  assuranceError = null
 }) {
-  const { globalDisposition = 'REVIEW', globalReason = '', evidenceCount = 0, unresolvedFlags = 0, pillars = [] } = data;
+  // Safe fallback values from authoritative App-level data prop
+  const globalDisposition = data.globalDisposition || 'NOT ASSESSED';
+  const globalReason = data.globalReason || 'Assurance summary unavailable.';
+  const evidenceCount = data.evidenceCount ?? 0;
+  const unresolvedFlags = data.unresolvedFlags ?? 0;
+  const pillars = data.pillars || [];
 
   const getPillarIcon = (id) => {
     switch (id) {
@@ -46,6 +53,34 @@ export function OverviewPage({
 
   return (
     <div className="overview-page">
+      {/* Loading & Error Notice Banners */}
+      {assuranceLoading && (
+        <div style={{
+          padding: '8px 12px',
+          marginBottom: '12px',
+          background: 'var(--bg-canvas)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: '6px',
+          fontSize: '12px',
+          color: 'var(--text-muted)'
+        }}>
+          Loading live assurance summary...
+        </div>
+      )}
+      {assuranceError && (
+        <div style={{
+          padding: '8px 12px',
+          marginBottom: '12px',
+          background: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid var(--status-quarantine-border)',
+          borderRadius: '6px',
+          fontSize: '12px',
+          color: 'var(--status-quarantine-text)'
+        }}>
+          Unable to load live assurance summary. Using available fallback.
+        </div>
+      )}
+
       {/* Top Lifecycle Executive Banner */}
       <SectionCard
         title="Pipeline Integrity Assurance Lifecycle"
