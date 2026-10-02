@@ -21,12 +21,19 @@ export async function request(endpoint, options = {}, mockFallback = null) {
 
   const url = `${API_BASE_URL}${endpoint}`;
   try {
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+    const headers = { ...(options.headers || {}) };
+    if (!isFormData) {
+      if (!headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+    } else {
+      delete headers['Content-Type'];
+    }
+
     const res = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      }
+      headers
     });
 
     if (!res.ok) {
