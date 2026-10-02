@@ -15,7 +15,7 @@ const RETRY_INTERVAL_MS = 15000;
 
 export async function request(endpoint, options = {}, mockFallback = null) {
   const now = Date.now();
-  if (!isBackendReachable && now - lastCheckTime < RETRY_INTERVAL_MS) {
+  if (endpoint !== '/health' && !isBackendReachable && now - lastCheckTime < RETRY_INTERVAL_MS) {
     return { data: mockFallback, isMock: true, error: null };
   }
 
@@ -23,11 +23,11 @@ export async function request(endpoint, options = {}, mockFallback = null) {
   try {
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
     const headers = { ...(options.headers || {}) };
-    if (!isFormData) {
+    if (!isFormData && options.body) {
       if (!headers['Content-Type']) {
         headers['Content-Type'] = 'application/json';
       }
-    } else {
+    } else if (isFormData) {
       delete headers['Content-Type'];
     }
 

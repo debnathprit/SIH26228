@@ -49,33 +49,43 @@ export function App() {
   useEffect(() => {
     // Attempt to load authoritative live backend data
     async function loadData() {
-      // Live Verified Endpoints: Health, System Overview & Assurance Summary
+      // Intended sequential startup request flow:
+      // 1. health -> 2. system/overview -> 3. assurance/summary
       setAssuranceLoading(true);
       try {
-        const [healthRes, sysRes, sumRes] = await Promise.all([
-          systemService.getHealth(),
-          systemService.getOverview(),
-          assuranceService.getAssuranceSummary()
-        ]);
-
+        // Step 1: Health check
+        const healthRes = await systemService.getHealth();
         if (healthRes.data && healthRes.data.status === 'ok') {
           setBackendHealth(healthRes.data);
           setIsBackendConnected(true);
+
+          // Step 2: System Overview
+          try {
+            const sysRes = await systemService.getOverview();
+            if (sysRes.data && sysRes.data.components) {
+              setSystemOverview(sysRes.data);
+            }
+          } catch (sysErr) {
+            console.warn('System overview check failed:', sysErr);
+          }
+
+          // Step 3: Assurance Summary
+          const sumRes = await assuranceService.getAssuranceSummary();
+          if (sumRes.data) {
+            setOverviewData(sumRes.data);
+            setIsMockActive(Boolean(sumRes.isMock));
+            setAssuranceError(null);
+          } else {
+            setIsMockActive(true);
+          }
         } else {
           setIsBackendConnected(false);
-        }
-
-        if (sysRes.data && sysRes.data.components) {
-          setSystemOverview(sysRes.data);
-        }
-
-        if (sumRes.data) {
-          setOverviewData(sumRes.data);
-          setAssuranceError(null);
+          setIsMockActive(true);
         }
       } catch (err) {
         console.warn('Backend system endpoints check failed:', err);
         setIsBackendConnected(false);
+        setIsMockActive(true);
         setAssuranceError(err.message || 'Failed to load assurance summary');
       } finally {
         setAssuranceLoading(false);
