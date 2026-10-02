@@ -86,6 +86,7 @@ class DistributionShiftReport:
     evidence_hash: str | None
     explanation: str
     evidence_available: bool
+    ledger_record_index: int | None = None
     limitations: str = SCIENTIFIC_LIMITATION
 
     def to_dict(self) -> dict[str, Any]:
@@ -104,6 +105,7 @@ class DistributionShiftReport:
             "evidence_hash": self.evidence_hash,
             "explanation": self.explanation,
             "evidence_available": self.evidence_available,
+            "ledger_record_index": self.ledger_record_index,
             "limitations": self.limitations,
         }
 
@@ -212,6 +214,7 @@ class DistributionShiftEvaluator:
         query_target: Union[str, Path, None] = None,
         ledger: HashChainLedger | None = None,
         timestamp: str | None = None,
+        display_target: str | None = None,
     ) -> DistributionShiftReport:
         """Evaluate a query image or image directory against the reference baseline.
 
@@ -220,6 +223,7 @@ class DistributionShiftEvaluator:
         """
         now_iso = timestamp or datetime.now(timezone.utc).isoformat()
         ref_fingerprint = self.get_reference_fingerprint()
+        target_label = display_target or (str(query_target) if query_target is not None else "None")
 
         # 1. Guard: Missing query target
         if query_target is None or str(query_target).strip() == "":
@@ -227,7 +231,7 @@ class DistributionShiftEvaluator:
                 assessment_timestamp=now_iso,
                 reference_dataset=str(self.reference_dir),
                 reference_fingerprint=ref_fingerprint,
-                query_target="None",
+                query_target=target_label,
                 query_hash=None,
                 overall_drift_score=0.0,
                 overall_severity="low",
@@ -489,17 +493,19 @@ class DistributionShiftEvaluator:
             "overall_drift_score": overall_drift_score,
             "overall_severity": overall_severity,
             "query_hash": query_hash,
-            "query_target": str(query_target),
+            "query_target": target_label,
             "reference_fingerprint": ref_fingerprint,
             "status": status,
         }
         evidence_hash = sha256_json(evidence_payload)
 
         # 10. Ledger append & verification (if ledger provided)
+        ledger_record_index: int | None = None
         if ledger is not None:
             ledger_entry = dict(evidence_payload)
             ledger_entry["evidence_hash"] = evidence_hash
-            ledger.append_record(payload=ledger_entry, timestamp=now_iso)
+            rec = ledger.append_record(payload=ledger_entry, timestamp=now_iso)
+            ledger_record_index = rec.index
             is_valid, reason = ledger.verify_chain()
             if not is_valid:
                 status = "TAMPERED"
@@ -510,7 +516,7 @@ class DistributionShiftEvaluator:
             assessment_timestamp=now_iso,
             reference_dataset=str(self.reference_dir),
             reference_fingerprint=ref_fingerprint,
-            query_target=str(query_target),
+            query_target=target_label,
             query_hash=query_hash,
             overall_drift_score=overall_drift_score,
             overall_severity=overall_severity,
@@ -521,6 +527,7 @@ class DistributionShiftEvaluator:
             evidence_hash=evidence_hash,
             explanation=explanation,
             evidence_available=True,
+            ledger_record_index=ledger_record_index,
             limitations=SCIENTIFIC_LIMITATION,
         )
 

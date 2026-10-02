@@ -72,3 +72,36 @@ class AssuranceSummaryData(BaseModel):
     unresolvedFlags: int = Field(ge=0)
     pillars: list[AssurancePillar] = Field(default_factory=list)
 
+
+class ShiftDimensionData(BaseModel):
+    """Evaluated metric shift for an individual physical image dimension."""
+
+    dimension: str
+    shiftValue: float = Field(ge=0.0)
+    status: str  # NORMAL | DRIFT_DETECTED | ANOMALOUS
+    note: str
+
+
+class DistributionShiftEvaluationData(BaseModel):
+    """Structured response payload for active distribution shift evaluation."""
+
+    assessmentTimestamp: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    referenceDataset: str
+    referenceFingerprint: str
+    queryTarget: str
+    queryHash: Optional[str] = None
+    overallDriftScore: float = Field(ge=0.0, le=1.0)
+    overallSeverity: str  # low | medium | high | critical
+    overallConfidence: float = Field(ge=0.0, le=1.0)
+    classification: str  # IN-DISTRIBUTION | OPERATIONAL DRIFT | OUT-OF-DISTRIBUTION | UNAVAILABLE
+    status: str  # VERIFIED | REVIEW | UNAVAILABLE | TAMPERED
+    dimensions: list[ShiftDimensionData] = Field(default_factory=list)
+    evidenceHash: Optional[str] = None
+    explanation: str
+    evidenceAvailable: bool = False
+    ledgerRecordIndex: Optional[int] = None
+    limitations: str
+
+
