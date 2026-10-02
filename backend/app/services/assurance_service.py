@@ -468,6 +468,32 @@ class AssuranceService:
             0,
         )
 
+    def evaluate_active_distribution_shift(
+        self,
+        query_image_path: Path | str,
+        display_filename: str | None = None,
+        reference_dir: Path | str | None = None,
+        ledger: HashChainLedger | None = None,
+    ) -> Any:
+        """Execute active distribution shift evaluation for an operational query image.
+
+        Appends the resulting cryptographic evidence to the active audit ledger
+        and verifies the sequential chain.
+        """
+        from ml.distribution_shift.detector import DistributionShiftEvaluator
+
+        ref_dir = Path(reference_dir) if reference_dir else self.dataset_dir
+        evaluator = DistributionShiftEvaluator(reference_dir=ref_dir)
+        active_ledger = ledger or self._get_or_create_ledger()
+
+        report = evaluator.evaluate(
+            query_target=query_image_path,
+            ledger=active_ledger,
+            display_target=display_filename,
+        )
+
+        return report
+
     def evaluate_ledger(
         self, ledger: HashChainLedger | None = None
     ) -> tuple[AssurancePillar, int]:
