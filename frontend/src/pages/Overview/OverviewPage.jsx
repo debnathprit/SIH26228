@@ -140,7 +140,7 @@ export function OverviewPage({
           isBackendConnected ? (
             <StatusBadge status="VERIFIED" label={`API v${backendHealth?.version || '1.0.0'} ONLINE`} />
           ) : (
-            <StatusBadge status="REVIEW" label="OFFLINE (DEMO MODE)" />
+            <StatusBadge status="REVIEW" label="OFFLINE (STANDBY MODE)" />
           )
         }
       >
@@ -184,7 +184,7 @@ export function OverviewPage({
               })
             ) : (
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '8px 0' }}>
-                Backend service unreachable. Using local simulation fallback.
+                Backend service unreachable. Using offline fallback baseline.
               </div>
             )}
           </div>

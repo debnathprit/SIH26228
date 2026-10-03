@@ -3,28 +3,27 @@
 **Project:** Trustworthy Computer Vision Integrity Assurance for Data, Models and Inference Outputs in Multi-Contributor Pipelines  
 **Competition:** Smart India Hackathon 2026 (Problem Statement 26228)  
 **Stakeholder:** Ministry of Defence (MoD) / Indian Army (DGIS)  
-**Author:** Person B (Frontend, Assurance Dashboard, Evidence & Audit UI Lead)  
-**Branch:** `sounava`  
+**Subsystem:** Frontend Assurance Dashboard, Evidence & Audit UI Lead Architecture
+**Integrated Release:** `main`
 
 ---
 
-## 1. Person B Scope of Responsibility
+## 1. Subsystem Responsibilities & Architectural Alignment
 
-In this two-person team:
-- **Person B (Frontend Engineer):**
-  - Analyst-facing dashboard design, usability, and presentation.
+- **Frontend Assurance Subsystem:**
+  - Analyst-facing dashboard design, usability, and operational visualization.
   - Multi-contributor CV lifecycle visualization.
   - Evidence and audit trail presentation.
   - Assurance report generation and export UI.
-  - Service abstraction layer and contract definitions.
+  - Service abstraction layer and API client contracts.
   - Offline / air-gapped environment compliance.
-  - Frontend-side testing and presentation demo support.
-- **Person A (Backend/ML Engineer):**
+  - Presentation and verification suite.
+- **Backend & ML Assurance Subsystem:**
   - Dataset integrity engine (label flipping, near-duplicate hashing, trigger scans).
   - Model integrity engine (weight verification, Neural Cleanse, behavioral batteries).
   - Computer vision inference pipeline.
-  - Cryptographic evidence generation (SHA-256 digests, HMACs, Merkle logs).
-  - Distribution shift analysis (Wasserstein distance, environmental drift classifier).
+  - Cryptographic evidence generation (SHA-256 digests, HMACs, sequential hash-chain ledger).
+  - Distribution shift analysis (Wasserstein distance, KS-test, multi-dimensional drift classifier).
 
 ---
 

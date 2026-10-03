@@ -22,7 +22,7 @@ export function Header({ currentTitle, globalDisposition = 'REVIEW', backendHeal
             borderColor: isBackendConnected ? 'var(--status-verified-border)' : 'var(--border-subtle)',
             background: isBackendConnected ? 'var(--status-verified-bg)' : 'transparent'
           }}
-          title={isBackendConnected ? `Backend API v${backendHealth?.version || '1.0.0'} online (${API_BASE_URL})` : `Backend unreachable (${API_BASE_URL}). Operating in offline demo fallback.`}
+          title={isBackendConnected ? `Backend API v${backendHealth?.version || '1.0.0'} online (${API_BASE_URL})` : `Backend unreachable (${API_BASE_URL}). Operating in offline fallback mode.`}
         >
           <span
             className="air-gap-dot"

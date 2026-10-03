@@ -72,7 +72,7 @@ export const mockAssuranceReport = {
   supportedAttackClasses: SUPPORTED_ATTACK_CLASSES,
   unsupportedAttackClasses: UNSUPPORTED_ATTACK_CLASSES,
   signOff: {
-    analystName: 'Person B (Lead Frontend & Assurance Analyst)',
+    analystName: 'Lead Computer Vision Assurance Analyst',
     reviewedBy: 'Technical Director, DGIS Integrity Verification Office',
     status: 'PENDING ADMINISTRATIVE ACTION'
   }

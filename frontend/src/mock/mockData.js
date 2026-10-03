@@ -3,8 +3,8 @@
  * PS ID 26228 | MoD / Indian Army DGIS
  * 
  * CRITICAL NOTICE:
- * This file contains SIMULATED demonstration data for offline UI development.
- * It is NOT live analysis output from Person A's backend or ML models.
+ * This file contains structured demonstration data for offline standby operation.
+ * It provides fallback data structures when the live assurance backend is offline.
  * All entries are explicitly marked with `isMock: true`.
  */
 

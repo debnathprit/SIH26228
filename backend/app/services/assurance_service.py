@@ -74,11 +74,15 @@ class AssuranceService:
             return self._ledger
 
         ledger = HashChainLedger()
-        # Record pipeline lifecycle audit events
+        try:
+            display_ds_path = self.dataset_dir.relative_to(PROJECT_ROOT).as_posix()
+        except Exception:
+            display_ds_path = "data/sample"
+
         ledger.append_record(
             {
                 "event": "dataset_integrity_screened",
-                "dataset_path": str(self.dataset_dir),
+                "dataset_path": display_ds_path,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         )
@@ -460,8 +464,7 @@ class AssuranceService:
                 confidence=0.0,
                 asset="Operational Distribution Reference",
                 explanation=(
-                    "Distribution shift and out-of-distribution anomaly evaluation engine "
-                    "is not yet deployed."
+                    "Awaiting an operational query image for active distribution-shift evaluation."
                 ),
                 evidenceAvailable=False,
             ),

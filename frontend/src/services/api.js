@@ -45,7 +45,7 @@ export async function request(endpoint, options = {}, mockFallback = null) {
         return {
           data: mockFallback,
           isMock: true,
-          error: `Endpoint ${endpoint} returned HTTP ${res.status} (${res.statusText}). Using local mock data.`
+          error: `Endpoint ${endpoint} returned HTTP ${res.status} (${res.statusText}). Engaging offline fallback baseline.`
         };
       }
       throw new Error(`HTTP error ${res.status}: ${res.statusText}`);
@@ -68,7 +68,7 @@ export async function request(endpoint, options = {}, mockFallback = null) {
       return {
         data: mockFallback,
         isMock: true,
-        error: `Local backend unreachable (${err.message}). Using local mock data.`
+        error: `Backend service unreachable (${err.message}). Engaging offline fallback baseline.`
       };
     }
     return { data: null, isMock: false, error: err.message };

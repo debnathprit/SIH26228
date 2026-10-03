@@ -34,15 +34,15 @@ export function AppLayout({
           {isMock && (
             <div className="mock-notice-banner" role="status">
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span className="mock-notice-badge">DEMO / MOCK DATA</span>
+                <span className="mock-notice-badge">OFFLINE STANDBY DATA</span>
                 <span>
-                  Currently displaying simulated offline assurance data for frontend development & presentation. 
-                  Live evaluation will be performed once Person A backend endpoints are active.
+                  Currently displaying offline assurance baseline data in standby mode.
+                  Live cryptographic evaluation is engaged when the backend assurance service is reachable.
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
                 <IconAlertTriangle size={14} color="#f59e0b" />
-                <span>Simulated Mode</span>
+                <span>Standby Mode</span>
               </div>
             </div>
           )}

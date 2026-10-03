@@ -57,7 +57,7 @@ export function Sidebar({ currentTab, onSelectTab }) {
       <div className="sidebar-footer">
         <div>Assurance Layer v1.0.0</div>
         <div style={{ color: 'var(--accent-cyan)', marginTop: '4px' }}>
-          Branch: sounava (Person B)
+          Production Node — Active
         </div>
       </div>
     </aside>

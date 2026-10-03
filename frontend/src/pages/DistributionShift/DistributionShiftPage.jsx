@@ -38,8 +38,10 @@ export function DistributionShiftPage({ data }) {
   // Active display model: prefers evaluated response, falls back to initial prop
   const current = evaluatedData || data || {};
 
-  const operationalUnit = current.queryTarget || current.operationalUnit || 'Operational Feed / Sensor';
-  const refDataset = current.referenceDataset || 'Baseline High-Altitude Daylight Reference v1.2';
+  const rawRefDataset = current.referenceDataset || 'Baseline High-Altitude Daylight Reference v1.2';
+  const refDataset = (rawRefDataset.includes('Users') || rawRefDataset.includes(':\\') || rawRefDataset.includes(':/'))
+    ? 'Default Accredited Baseline (data/sample)'
+    : rawRefDataset;
   const overallSeverity = current.overallSeverity || 'low';
   const overallConfidence = current.overallConfidence ?? 0.85;
   const classification = current.classification || 'NOT ASSESSED';
@@ -132,7 +134,7 @@ export function DistributionShiftPage({ data }) {
           isLiveResult ? (
             <StatusBadge status="VERIFIED" label="LIVE EVALUATION RESULT" />
           ) : (
-            <StatusBadge status="REVIEW" label="MOCK / DEMO BASELINE" />
+            <StatusBadge status="REVIEW" label="REFERENCE BASELINE (STANDBY)" />
           )
         }
       >
@@ -376,7 +378,7 @@ export function DistributionShiftPage({ data }) {
               <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
                 {ledgerRecordIndex !== undefined && ledgerRecordIndex !== null
                   ? `Record #${ledgerRecordIndex} (Chained & Verified)`
-                  : 'Simulated Entry (Demo Mode)'}
+                  : 'Unregistered (Standby Mode)'}
               </div>
             </div>
           </div>

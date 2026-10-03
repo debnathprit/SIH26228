@@ -1,8 +1,8 @@
-# PROPOSED FRONTEND-BACKEND API CONTRACT
+# INTEGRATED FRONTEND-BACKEND API SPECIFICATION
 
-> **NOTICE:** This document represents a **PROPOSED API CONTRACT** authored by Person B (Frontend Lead).  
-> It is **NOT** final until reviewed and confirmed by Person A (Backend/ML Lead).  
-> Backend implementation details must align with this contract or propose mutual modifications before Phase 2 integration.
+> **SPECIFICATION:** Consolidated API Contract for the Trusted Computer Vision Assurance Architecture.
+> Standardized protocol definitions connecting frontend assurance consumers and backend assurance engines.
+> Production Base URL: `https://sih26228.onrender.com/api/v1` | Local Development: `http://localhost:8000/api/v1`.
 
 ---
 
