@@ -271,6 +271,122 @@ class TestActiveDistributionShiftAPI(unittest.TestCase):
         self.assertEqual(res_overview.status_code, 200)
         self.assertEqual(res_overview.json()["data"]["project"], "Trusted Computer Vision Assurance")
 
+    def test_summary_reflects_post_distribution_shift_evaluation(self) -> None:
+        """GET /assurance/summary reflects latest verified shift evaluation after POST."""
+        # 1. Before POST: shift pillar is UNAVAILABLE
+        res_before = self.client.get("/api/v1/assurance/summary")
+        self.assertEqual(res_before.status_code, 200)
+        data_before = res_before.json()["data"]
+        shift_before = next(p for p in data_before["pillars"] if p["id"] == "shift")
+        self.assertEqual(shift_before["status"], "UNAVAILABLE")
+        self.assertFalse(shift_before["evidenceAvailable"])
+        self.assertIn("awaiting query image evaluation", shift_before["explanation"])
+
+        # 2. Perform live evaluation via POST
+        with open(self.sample_01, "rb") as f:
+            res_post = self.client.post(
+                "/api/v1/assurance/distribution-shift/evaluate",
+                files={"file": ("sample_01.png", f, "image/png")},
+            )
+        self.assertEqual(res_post.status_code, 200)
+        post_data = res_post.json()["data"]
+        self.assertEqual(post_data["status"], "VERIFIED")
+
+        # 3. After POST: shift pillar in GET /assurance/summary reflects verified evaluation
+        res_after = self.client.get("/api/v1/assurance/summary")
+        self.assertEqual(res_after.status_code, 200)
+        data_after = res_after.json()["data"]
+        shift_after = next(p for p in data_after["pillars"] if p["id"] == "shift")
+
+        self.assertEqual(shift_after["status"], "VERIFIED")
+        self.assertEqual(shift_after["severity"], "low")
+        self.assertTrue(shift_after["evidenceAvailable"])
+        self.assertGreaterEqual(shift_after["confidence"], 0.90)
+        self.assertEqual(shift_after["asset"], "Shift Analysis: sample_01.png")
+        self.assertIn("drift score:", shift_after["explanation"])
+        self.assertNotIn("not yet deployed", shift_after["explanation"])
+        self.assertNotIn("awaiting query image evaluation", shift_after["explanation"])
+
+        # All 5 pillars verified -> global disposition VERIFIED
+        self.assertEqual(data_after["globalDisposition"], "VERIFIED")
+        self.assertIn("All core computer vision lifecycle stages verified", data_after["globalReason"])
+
+    def test_summary_ignores_invalid_or_tampered_ledger_record(self) -> None:
+        """Ledger-aware summary skips tampered or corrupted shift records."""
+        ledger = self.service._get_or_create_ledger()
+
+        # Append a shift record with tampered evidence_hash
+        tampered_payload = {
+            "type": "DISTRIBUTION_SHIFT_EVALUATION",
+            "query_target": "fake_image.png",
+            "status": "VERIFIED",
+            "overall_severity": "low",
+            "overall_drift_score": 0.01,
+            "overall_confidence": 0.99,
+            "evidence_hash": "a" * 64,  # Fraudulent hash
+        }
+        ledger.append_record(tampered_payload)
+
+        # GET /assurance/summary should ignore the tampered record and remain UNAVAILABLE
+        res = self.client.get("/api/v1/assurance/summary")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()["data"]
+        shift_pillar = next(p for p in data["pillars"] if p["id"] == "shift")
+        self.assertEqual(shift_pillar["status"], "UNAVAILABLE")
+        self.assertFalse(shift_pillar["evidenceAvailable"])
+
+    def test_summary_uses_latest_of_multiple_ledger_records(self) -> None:
+        """GET /assurance/summary reflects the most recent valid evaluation when multiple exist."""
+        # 1. First evaluation: in-distribution sample_01.png
+        with open(self.sample_01, "rb") as f:
+            res1 = self.client.post(
+                "/api/v1/assurance/distribution-shift/evaluate",
+                files={"file": ("sample_01.png", f, "image/png")},
+            )
+        self.assertEqual(res1.status_code, 200)
+
+        # 2. Second evaluation: darkened image (operational drift)
+        img = cv2.imread(str(self.sample_01))
+        darkened = np.clip(img.astype(np.int32) - 100, 0, 255).astype(np.uint8)
+        _, encoded = cv2.imencode(".png", darkened)
+        res2 = self.client.post(
+            "/api/v1/assurance/distribution-shift/evaluate",
+            files={"file": ("darkened_sample.png", encoded.tobytes(), "image/png")},
+        )
+        self.assertEqual(res2.status_code, 200)
+
+        # 3. GET /assurance/summary must reflect the latest (second) evaluation
+        res_summary = self.client.get("/api/v1/assurance/summary")
+        self.assertEqual(res_summary.status_code, 200)
+        data = res_summary.json()["data"]
+        shift_pillar = next(p for p in data["pillars"] if p["id"] == "shift")
+
+        self.assertEqual(shift_pillar["status"], "REVIEW")
+        self.assertEqual(shift_pillar["asset"], "Shift Analysis: darkened_sample.png")
+        self.assertTrue(shift_pillar["evidenceAvailable"])
+        self.assertIn("drift detected", shift_pillar["explanation"])
+
+    def test_summary_does_not_mutate_ledger_when_reading_shift_record(self) -> None:
+        """GET /assurance/summary preserves ledger immutability and creates zero records."""
+        # Evaluate one image
+        with open(self.sample_01, "rb") as f:
+            res = self.client.post(
+                "/api/v1/assurance/distribution-shift/evaluate",
+                files={"file": ("sample_01.png", f, "image/png")},
+            )
+        self.assertEqual(res.status_code, 200)
+
+        ledger = self.service._get_or_create_ledger()
+        height_before = ledger.length
+
+        # Call GET /assurance/summary 3 times
+        for _ in range(3):
+            res_summary = self.client.get("/api/v1/assurance/summary")
+            self.assertEqual(res_summary.status_code, 200)
+
+        # Ledger length must remain identical
+        self.assertEqual(ledger.length, height_before)
+
 
 if __name__ == "__main__":
     unittest.main()
