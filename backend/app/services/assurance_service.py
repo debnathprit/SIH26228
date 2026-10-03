@@ -358,6 +358,46 @@ class AssuranceService:
                 0,
             )
 
+    def _find_latest_verified_shift_record(
+        self, ledger: HashChainLedger | None = None
+    ) -> dict[str, Any] | None:
+        """Inspect the active audit ledger and return the latest verified shift evaluation payload."""
+        active_ledger = ledger or self._ledger
+        if active_ledger is None or not hasattr(active_ledger, "records"):
+            return None
+
+        for record in reversed(active_ledger.records):
+            if not isinstance(record.payload, dict):
+                continue
+            if record.payload.get("type") != "DISTRIBUTION_SHIFT_EVALUATION":
+                continue
+
+            # 1. Verify record block hash integrity
+            try:
+                expected_hash = active_ledger.calculate_expected_hash(record)
+                if record.current_hash != expected_hash:
+                    continue
+            except Exception:
+                continue
+
+            # 2. Verify cryptographic evidence payload binding
+            evidence_hash = record.payload.get("evidence_hash")
+            if not evidence_hash or not isinstance(evidence_hash, str):
+                continue
+
+            raw_evidence = {
+                k: v for k, v in record.payload.items() if k != "evidence_hash"
+            }
+            try:
+                if not verify_hash(raw_evidence, evidence_hash, is_json=True):
+                    continue
+            except Exception:
+                continue
+
+            return record.payload
+
+        return None
+
     def evaluate_distribution_shift(
         self,
         query_target: Path | str | None = None,
@@ -368,8 +408,8 @@ class AssuranceService:
         """Evaluate Distribution Shift & Out-of-Distribution Anomaly.
 
         Honors requirement: do not invent fake successful results. If no operational
-        query input is supplied, represent the unavailable state explicitly without
-        creating ledger entries.
+        query input is supplied, recover the latest verified evaluation from the ledger
+        if present, or represent the honest unqueried state without creating ledger entries.
         """
         # 1. Direct pre-computed evidence dict (preserved)
         if shift_evidence:
@@ -454,7 +494,56 @@ class AssuranceService:
                     0,
                 )
 
-        # 3. Honest representation of unqueried / passive state
+        # 3. Ledger-aware recovery of latest verified operational evaluation
+        latest_record = self._find_latest_verified_shift_record(ledger=ledger)
+        if latest_record is not None:
+            status = latest_record.get("status", "VERIFIED")
+            severity = latest_record.get("overall_severity", "low")
+            drift_score = float(latest_record.get("overall_drift_score", 0.0))
+
+            conf = latest_record.get("overall_confidence")
+            if conf is None:
+                conf = round(float(max(0.50, min(0.99, 1.0 - drift_score))), 4)
+            else:
+                conf = round(float(conf), 4)
+
+            query_target_name = latest_record.get("query_target", "Operational Sensor Feed")
+            asset_name = f"Shift Analysis: {Path(str(query_target_name)).name}"
+
+            explanation = latest_record.get("explanation")
+            if not explanation:
+                classification = latest_record.get("classification", "")
+                if classification == "IN-DISTRIBUTION" or drift_score <= 0.15:
+                    explanation = (
+                        f"Operational distribution matches reference baseline (drift score: {drift_score:.4f} <= 0.15). "
+                        "Sensor dynamics and environmental variance verified."
+                    )
+                elif classification == "OPERATIONAL DRIFT" or drift_score <= 0.40:
+                    explanation = (
+                        f"Operational distribution drift detected (drift score: {drift_score:.4f}). "
+                        "Moderate sensor or environmental variance flagged for review."
+                    )
+                else:
+                    explanation = (
+                        f"Out-of-distribution anomaly detected (drift score: {drift_score:.4f} > 0.40). "
+                        "Significant environmental or sensor shift requires analyst inspection."
+                    )
+
+            return (
+                AssurancePillar(
+                    id="shift",
+                    title="Distribution Shift & Anomaly",
+                    status=status,
+                    severity=severity,
+                    confidence=conf,
+                    asset=asset_name,
+                    explanation=explanation,
+                    evidenceAvailable=True,
+                ),
+                1,
+            )
+
+        # 4. Honest representation of unqueried / passive baseline state
         return (
             AssurancePillar(
                 id="shift",
@@ -464,7 +553,7 @@ class AssuranceService:
                 confidence=0.0,
                 asset="Operational Distribution Reference",
                 explanation=(
-                    "Awaiting an operational query image for active distribution-shift evaluation."
+                    "Operational distribution shift engine is active and awaiting query image evaluation."
                 ),
                 evidenceAvailable=False,
             ),
@@ -562,8 +651,11 @@ class AssuranceService:
         ledger_pillar: AssurancePillar | None = None,
         ledger_evidence_count: int | None = None,
         shift_query_target: Path | str | None = None,
+        ledger: HashChainLedger | None = None,
     ) -> AssuranceSummaryData:
         """Aggregate evaluation results across all pillars into the executive assurance summary."""
+        active_ledger = ledger or self._get_or_create_ledger()
+
         # 1. Evaluate or use provided pillars
         if dataset_pillar is None:
             dataset_pillar, ds_ev = self.evaluate_dataset()
@@ -581,12 +673,14 @@ class AssuranceService:
             inf_ev = inference_evidence_count or (1 if inference_pillar.evidenceAvailable else 0)
 
         if shift_pillar is None:
-            shift_pillar, sh_ev = self.evaluate_distribution_shift(query_target=shift_query_target)
+            shift_pillar, sh_ev = self.evaluate_distribution_shift(
+                query_target=shift_query_target, ledger=active_ledger
+            )
         else:
             sh_ev = shift_evidence_count or (1 if shift_pillar.evidenceAvailable else 0)
 
         if ledger_pillar is None:
-            ledger_pillar, led_ev = self.evaluate_ledger()
+            ledger_pillar, led_ev = self.evaluate_ledger(ledger=active_ledger)
         else:
             led_ev = ledger_evidence_count or (1 if ledger_pillar.evidenceAvailable else 0)
 
@@ -639,7 +733,7 @@ class AssuranceService:
             if verified_pillars:
                 reasons.append(f"{len(verified_pillars)} of {len(pillars)} capability pillars verified")
             if unavailable_pillars:
-                reasons.append(f"{', '.join(unavailable_pillars)} evaluation unavailable pending module deployment")
+                reasons.append(f"{', '.join(unavailable_pillars)} evaluation awaiting operational input")
             global_reason = f"Partial lifecycle assurance: {'; '.join(reasons)}."
 
         return AssuranceSummaryData(
