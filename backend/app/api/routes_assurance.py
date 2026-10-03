@@ -212,9 +212,13 @@ async def evaluate_distribution_shift_endpoint(
             for d in report.dimensions
         ]
 
+        ref_dataset_clean = report.reference_dataset or "data/sample"
+        if "\\" in ref_dataset_clean or ":/" in ref_dataset_clean or "Users" in ref_dataset_clean:
+            ref_dataset_clean = "data/sample"
+
         evaluation_data = DistributionShiftEvaluationData(
             assessmentTimestamp=report.assessment_timestamp,
-            referenceDataset=report.reference_dataset,
+            referenceDataset=ref_dataset_clean,
             referenceFingerprint=report.reference_fingerprint,
             queryTarget=sanitized_name,
             queryHash=report.query_hash or "",

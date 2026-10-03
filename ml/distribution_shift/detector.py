@@ -224,12 +224,16 @@ class DistributionShiftEvaluator:
         now_iso = timestamp or datetime.now(timezone.utc).isoformat()
         ref_fingerprint = self.get_reference_fingerprint()
         target_label = display_target or (str(query_target) if query_target is not None else "None")
+        try:
+            ref_repr = self.reference_dir.relative_to(PROJECT_ROOT).as_posix()
+        except Exception:
+            ref_repr = self.reference_dir.name or "data/sample"
 
         # 1. Guard: Missing query target
         if query_target is None or str(query_target).strip() == "":
             return DistributionShiftReport(
                 assessment_timestamp=now_iso,
-                reference_dataset=str(self.reference_dir),
+                reference_dataset=ref_repr,
                 reference_fingerprint=ref_fingerprint,
                 query_target=target_label,
                 query_hash=None,
@@ -249,7 +253,7 @@ class DistributionShiftEvaluator:
         if not ref_features:
             return DistributionShiftReport(
                 assessment_timestamp=now_iso,
-                reference_dataset=str(self.reference_dir),
+                reference_dataset=ref_repr,
                 reference_fingerprint=ref_fingerprint,
                 query_target=str(query_target),
                 query_hash=None,
@@ -269,7 +273,7 @@ class DistributionShiftEvaluator:
         if not query_path.exists():
             return DistributionShiftReport(
                 assessment_timestamp=now_iso,
-                reference_dataset=str(self.reference_dir),
+                reference_dataset=ref_repr,
                 reference_fingerprint=ref_fingerprint,
                 query_target=str(query_target),
                 query_hash=None,
@@ -514,7 +518,7 @@ class DistributionShiftEvaluator:
 
         return DistributionShiftReport(
             assessment_timestamp=now_iso,
-            reference_dataset=str(self.reference_dir),
+            reference_dataset=ref_repr,
             reference_fingerprint=ref_fingerprint,
             query_target=target_label,
             query_hash=query_hash,
