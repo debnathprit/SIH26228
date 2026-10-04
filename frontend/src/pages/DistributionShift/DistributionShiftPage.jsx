@@ -38,6 +38,7 @@ export function DistributionShiftPage({ data }) {
   // Active display model: prefers evaluated response, falls back to initial prop
   const current = evaluatedData || data || {};
 
+  const operationalUnit = current.queryTarget || current.operationalUnit || 'Operational Sensor Feed';
   const rawRefDataset = current.referenceDataset || 'Baseline High-Altitude Daylight Reference v1.2';
   const refDataset = (rawRefDataset.includes('Users') || rawRefDataset.includes(':\\') || rawRefDataset.includes(':/'))
     ? 'Default Accredited Baseline (data/sample)'
