@@ -291,6 +291,12 @@ class TestActiveDistributionShiftAPI(unittest.TestCase):
         self.assertEqual(res_post.status_code, 200)
         post_data = res_post.json()["data"]
         self.assertEqual(post_data["status"], "VERIFIED")
+        self.assertEqual(post_data["classification"], "IN-DISTRIBUTION")
+        self.assertEqual(post_data["overallSeverity"], "low")
+        self.assertAlmostEqual(post_data["overallDriftScore"], 0.0588, places=4)
+        self.assertAlmostEqual(post_data["overallConfidence"], 0.9412, places=4)
+        self.assertTrue(post_data["evidenceAvailable"])
+        self.assertEqual(post_data["ledgerRecordIndex"], 3)
 
         # 3. After POST: shift pillar in GET /assurance/summary reflects verified evaluation
         res_after = self.client.get("/api/v1/assurance/summary")
@@ -310,6 +316,12 @@ class TestActiveDistributionShiftAPI(unittest.TestCase):
         # All 5 pillars verified -> global disposition VERIFIED
         self.assertEqual(data_after["globalDisposition"], "VERIFIED")
         self.assertIn("All core computer vision lifecycle stages verified", data_after["globalReason"])
+        self.assertEqual(data_after["evidenceCount"], 10)
+        self.assertEqual(data_after["unresolvedFlags"], 0)
+
+        audit_after = next(p for p in data_after["pillars"] if p["id"] == "audit")
+        self.assertEqual(audit_after["status"], "VERIFIED")
+        self.assertEqual(audit_after["asset"], "Assurance Ledger (Chain height: 4)")
 
     def test_summary_ignores_invalid_or_tampered_ledger_record(self) -> None:
         """Ledger-aware summary skips tampered or corrupted shift records."""
